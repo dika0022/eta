@@ -130,10 +130,11 @@ android {
 
 androidComponents {
     onVariants { variant ->
+        // Menggunakan versionName dari defaultConfig untuk menghindari error referensi pada variant Generic
+        val baseVersion = android.defaultConfig.versionName ?: "3.4.0"
         variant.outputs.forEach { output ->
             val name = variant.name
-            val version = variant.versionName.get()
-            output.outputFileName.set("Eta-v${version}-${name}.apk")
+            output.outputFileName.set("Eta-v${baseVersion}-${name}.apk")
         }
     }
 }
