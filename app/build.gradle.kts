@@ -22,7 +22,6 @@ java {
     }
 }
 
-// CI 对非发版构建传入提交号，按 SemVer 构建元数据追加为 +<sha>，不影响版本先后；本地与发版构建不传
 val buildMetadata = providers.gradleProperty("eta.buildMetadata").orNull?.takeIf { it.isNotBlank() }
 require(buildMetadata == null || buildMetadata.matches(Regex("[0-9A-Za-z.-]+"))) {
     "eta.buildMetadata 只能包含字母、数字、点和连字符"
@@ -38,12 +37,10 @@ android {
         applicationId = "io.github.mangi.eta"
         minSdk = 33
         targetSdk = 37
-        // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时随 versionName 一起手动递增。
         versionCode = 2026103101
         versionName = "3.4.0"
 
         ndk {
-            // 同时过滤本地与依赖 AAR 的原生库，确保 APK 仅包含 ARM64。
             abiFilters += "arm64-v8a"
         }
     }
@@ -61,14 +58,12 @@ android {
 
     buildTypes {
         debug {
-            // 版本名带构建类型标记，设置页与 APK 文件名据此区分 Debug 包
             versionNameSuffix = "-debug" + buildMetadataSuffix
             isMinifyEnabled = false
             isPseudoLocalesEnabled = true
         }
         release {
             versionNameSuffix = buildMetadataSuffix
-            // Jika signing release tidak ada, gunakan debug signing agar APK bisa diinstal
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
@@ -95,9 +90,7 @@ android {
     }
 
     packaging {
-        dex {
-            useLegacyPackaging = true
-        }
+        dex { useLegacyPackaging = true }
         jniLibs {
             useLegacyPackaging = true
             keepDebugSymbols += setOf("**/libproot_exec.so", "**/libproot_loader.so", "**/libeta_pty.so")
@@ -138,7 +131,9 @@ android {
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
-            output.outputFileName.set(output.versionName.map { "Eta-v$output.versionName.apk" })
+            val name = variant.name
+            val version = variant.versionName.get()
+            output.outputFileName.set("Eta-v${version}-${name}.apk")
         }
     }
 }
