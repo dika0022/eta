@@ -68,7 +68,8 @@ android {
         }
         release {
             versionNameSuffix = buildMetadataSuffix
-            signingConfig = signingConfigs.findByName("release")
+            // Jika signing release tidak ada, gunakan debug signing agar APK bisa diinstal
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -142,7 +143,7 @@ androidComponents {
     onVariants { variant ->
         // 文件名只取 versionName：构建类型标记与 CI 构建元数据都由 versionNameSuffix 带出
         variant.outputs.forEach { output ->
-            output.outputFileName.set(output.versionName.map { "Eta-v$it.apk" })
+            output.outputFileName.set(output.versionName.map { "Eta-v$output.versionName.apk" })
         }
     }
 }
@@ -154,7 +155,7 @@ dependencies {
     implementation(libs.xz)
     compileOnly(libs.libxposed.api)
     // UI 侧 RemotePreferences 写入桥：通过 XposedService 将配置提交到 LSPosed 数据库；
-    // Hook 侧用 XposedInterface.getRemotePreferences 读取当前进程持有的配置缓存。
+    // Hook 侧用 XposedInterface.getRemotePreferences 读取当前进程持有的配置缓存宣。
     implementation(libs.libxposed.service)
     implementation(libs.dexkit)
     implementation(libs.miuix.ui)
