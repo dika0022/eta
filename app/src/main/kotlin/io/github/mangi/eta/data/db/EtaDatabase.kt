@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import io.github.mangi.eta.agent.cron.CronRunEntity
 import io.github.mangi.eta.agent.cron.CronScheduleEntity
+import io.github.mangi.eta.agent.cron.CronScheduleDao
 
 @Database(
     entities = [
