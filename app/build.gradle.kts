@@ -18,7 +18,7 @@ val hasReleaseSigning = listOf(
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -81,8 +81,8 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     buildFeatures {
@@ -103,9 +103,7 @@ android {
             keepDebugSymbols += setOf("**/libproot_exec.so", "**/libproot_loader.so", "**/libeta_pty.so")
         }
         resources {
-            // 合并 Xposed 模块声明，避免 release 裁剪后模块入口失效
             merges += "META-INF/xposed/*"
-            // 仅排除会引发打包冲突的签名/版本元数据，避免误伤 Compose 资源
             excludes += "META-INF/*.kotlin_module"
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/io.netty.versions.properties"
@@ -115,13 +113,11 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = false
-        // versionCode 采用日期编码，已发布值只能递增；上限 2100000000 足够覆盖到 2099 年。
         disable += "HighAppVersionCode"
     }
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
-        // Robolectric 在高版本 JDK 下需要访问内部 API，参数只作用于测试 JVM。
         unitTests.all {
             it.jvmArgs(
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
@@ -141,7 +137,6 @@ android {
 
 androidComponents {
     onVariants { variant ->
-        // 文件名只取 versionName：构建类型标记与 CI 构建元数据都由 versionNameSuffix 带出
         variant.outputs.forEach { output ->
             output.outputFileName.set(output.versionName.map { "Eta-v$output.versionName.apk" })
         }
@@ -154,8 +149,6 @@ dependencies {
     implementation(libs.commons.compress)
     implementation(libs.xz)
     compileOnly(libs.libxposed.api)
-    // UI 侧 RemotePreferences 写入桥：通过 XposedService 将配置提交到 LSPosed 数据库；
-    // Hook 侧用 XposedInterface.getRemotePreferences 读取当前进程持有的配置缓存宣。
     implementation(libs.libxposed.service)
     implementation(libs.dexkit)
     implementation(libs.miuix.ui)
@@ -167,29 +160,18 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.activity.compose)
-    // 只使用 GFM 解析器；聊天渲染层由 ui/markdown 自建，按块冻结并接入逐字显现。
     implementation(libs.intellij.markdown)
     implementation(libs.hidden.api.bypass)
-
-    // DataStore：Provider / Model 结构化 JSON 与当前选中 ID 等键值
     implementation(libs.datastore.preferences)
-
     implementation("androidx.work:work-runtime-ktx:2.12.0")
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-
-    // OkHttp：替代 HttpURLConnection，支持 SSE
     implementation(libs.okhttp)
     implementation(libs.nimbus.jose.jwt)
     implementation(libs.okhttp.sse)
-
-    // Kotlinx Serialization：Provider 设置与运行时配置 JSON
     implementation(libs.kotlinx.serialization.json)
-
-    // Coroutines：显式引入，避免依赖传递版本不确定
     implementation(libs.kotlinx.coroutines.android)
-
     testImplementation(libs.junit)
     testImplementation(libs.json)
     testImplementation(libs.room.testing)
