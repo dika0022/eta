@@ -1,0 +1,44 @@
+name: Eta Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eta-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-debug-apk:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up build environment
+        uses: ./.github/actions/setup-build
+
+      - name: Build Debug APK
+        shell: bash
+        run: >-
+          ./gradlew --no-daemon --no-configuration-cache
+          "-Peta.buildMetadata=${GITHUB_SHA::7}"
+          :app:assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Eta-debug-apk
+          path: app/build/outputs/apk/debug/Eta-v*.apk
+          if-no-files-found: error
+          retention-days: 14
