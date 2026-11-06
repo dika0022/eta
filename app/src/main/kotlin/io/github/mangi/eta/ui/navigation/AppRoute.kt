@@ -23,6 +23,7 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object Skills : AppRoute
+    data object SkillMarketplace : AppRoute
 
     @Serializable
     data object Subagents : AppRoute

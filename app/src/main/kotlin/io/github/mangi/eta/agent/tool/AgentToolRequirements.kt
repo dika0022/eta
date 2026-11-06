@@ -45,6 +45,7 @@ internal object AgentToolRequirements {
             "skills_inspect_github", "skills_install_from_github",
             "cron_create", "cron_list", "cron_update", "cron_delete",
             "cron_pause", "cron_resume", "cron_run", "cron_history",
+            "cron_pending", "cron_confirm",
         )
         register(
             RootRequirement.PARTIAL,

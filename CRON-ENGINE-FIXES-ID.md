@@ -87,6 +87,17 @@ Semua perbaikan di atas bersifat lokal pada file yang sama dan tidak
 mengubah skema database, kontrak tool yang terlihat model (`cron_*`), atau
 perilaku yang didokumentasikan di `README-ID.md`.
 
+6. **`EtaDatabase.kt` — import `CronScheduleDao` yang hilang.** Luput dari
+   tinjauan manual pertama. `abstract fun cronDao(): CronScheduleDao`
+   memakai tipe dari package `io.github.mangi.eta.agent.cron`, berbeda dari
+   package file ini (`io.github.mangi.eta.data.db`), jadi butuh import
+   eksplisit — tidak seperti DAO lain yang sudah berada di package yang
+   sama dengan `EtaDatabase.kt`. **Perbaikan:** menambahkan
+   `import io.github.mangi.eta.agent.cron.CronScheduleDao`. Setelah ini
+   dicek ulang secara sistematis (silang semua pemakaian simbol
+   `Cron*`/`AgentCronToolCatalog` di luar package `agent/cron` terhadap
+   daftar import-nya) — tidak ada import lain yang hilang.
+
 ## 3. Langkah selanjutnya (wajib di mesin Anda)
 
 ```bash

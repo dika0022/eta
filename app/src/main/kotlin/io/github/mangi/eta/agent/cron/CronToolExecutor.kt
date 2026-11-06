@@ -23,6 +23,8 @@ internal class CronToolExecutor(context: Context) {
                 "cron_resume" -> mutate(args) { id -> CronScheduleManager.resume(appContext, id) }
                 "cron_run" -> mutate(args) { id -> CronScheduleManager.runNow(appContext, id) }
                 "cron_history" -> history(args)
+                "cron_pending" -> pending(args)
+                "cron_confirm" -> confirm(args)
                 else -> error("Unknown cron tool: $name")
             }
         }
@@ -46,6 +48,14 @@ internal class CronToolExecutor(context: Context) {
             timeZoneId = args.optString("time_zone").takeIf(String::isNotBlank)
                 ?: java.time.ZoneId.systemDefault().id,
             maxRetries = args.takeInt("max_retries") ?: 2,
+            dryRun = args.takeBoolean("dry_run") ?: false,
+            notifyPackage = args.optString("notify_package").takeIf(String::isNotBlank),
+            notifyMatch = args.optString("notify_match").takeIf(String::isNotBlank),
+            geoLat = args.takeDouble("geo_lat"),
+            geoLng = args.takeDouble("geo_lng"),
+            geoRadiusM = args.takeDouble("geo_radius_m")?.toFloat(),
+            geoTransition = args.optString("geo_transition").takeIf(String::isNotBlank),
+            requireConfirmation = args.takeBoolean("require_confirmation") ?: false,
         )
         return JSONObject().put("ok", true).put("schedule", scheduleJson(schedule)).toString()
     }
@@ -70,6 +80,8 @@ internal class CronToolExecutor(context: Context) {
             runAtMillis = args.takeLong("run_at_ms"),
             timeZoneId = args.optString("time_zone").takeIf(String::isNotBlank),
             maxRetries = args.takeInt("max_retries"),
+            dryRun = args.takeBoolean("dry_run"),
+            requireConfirmation = args.takeBoolean("require_confirmation"),
         )
         return JSONObject().put("ok", true).put("schedule", scheduleJson(schedule)).toString()
     }
@@ -91,24 +103,41 @@ internal class CronToolExecutor(context: Context) {
         return JSONObject()
             .put("ok", true)
             .put("id", id)
-            .put("runs", JSONArray().also { array ->
-                rows.forEach { row ->
-                    array.put(
-                        JSONObject()
-                            .put("run_key", row.runKey)
-                            .put("scheduled_at", row.scheduledAt)
-                            .put("started_at", row.startedAt)
-                            .put("finished_at", row.finishedAt ?: JSONObject.NULL)
-                            .put("status", row.status)
-                            .put("attempt", row.attempt)
-                            .put("output", row.output)
-                            .put("error", row.error ?: JSONObject.NULL)
-                            .put("worker_run_id", row.workerRunId ?: JSONObject.NULL),
-                    )
-                }
+            .put("runs", JSONArray().also { array -> rows.forEach { array.put(runJson(it)) } })
+            .toString()
+    }
+
+    private suspend fun pending(args: JSONObject): String {
+        val rows = CronScheduleManager.pendingConfirmations(appContext, args.optInt("limit", 20))
+        return JSONObject()
+            .put("ok", true)
+            .put("count", rows.size)
+            .put("pending", JSONArray().also { array ->
+                rows.forEach { array.put(runJson(it).put("schedule_id", it.scheduleId)) }
             })
             .toString()
     }
+
+    private suspend fun confirm(args: JSONObject): String {
+        val run = CronScheduleManager.confirmPendingRun(
+            context = appContext,
+            runKey = args.getString("run_key"),
+            approve = args.getBoolean("approve"),
+        )
+        return JSONObject().put("ok", true).put("run", runJson(run)).toString()
+    }
+
+    private fun runJson(row: CronRunEntity): JSONObject = JSONObject()
+        .put("run_key", row.runKey)
+        .put("scheduled_at", row.scheduledAt)
+        .put("started_at", row.startedAt)
+        .put("finished_at", row.finishedAt ?: JSONObject.NULL)
+        .put("status", row.status)
+        .put("attempt", row.attempt)
+        .put("output", row.output)
+        .put("error", row.error ?: JSONObject.NULL)
+        .put("worker_run_id", row.workerRunId ?: JSONObject.NULL)
+        .put("tool_calls", row.toolCallsJson?.let { JSONArray(it) } ?: JSONArray())
 
     private fun scheduleJson(schedule: CronScheduleEntity): JSONObject = JSONObject()
         .put("id", schedule.id)
@@ -127,6 +156,14 @@ internal class CronToolExecutor(context: Context) {
         .put("last_run_at", schedule.lastRunAt ?: JSONObject.NULL)
         .put("last_status", schedule.lastStatus ?: JSONObject.NULL)
         .put("last_error", schedule.lastError ?: JSONObject.NULL)
+        .put("dry_run", schedule.dryRun)
+        .put("notify_package", schedule.notifyPackage ?: JSONObject.NULL)
+        .put("notify_match", schedule.notifyMatch ?: JSONObject.NULL)
+        .put("geo_lat", schedule.geoLat ?: JSONObject.NULL)
+        .put("geo_lng", schedule.geoLng ?: JSONObject.NULL)
+        .put("geo_radius_m", schedule.geoRadiusM ?: JSONObject.NULL)
+        .put("geo_transition", schedule.geoTransition ?: JSONObject.NULL)
+        .put("require_confirmation", schedule.requireConfirmation)
 
     private fun JSONObject.takeLong(key: String): Long? {
         if (!has(key) || isNull(key)) return null
@@ -142,6 +179,24 @@ internal class CronToolExecutor(context: Context) {
         return when (val value = get(key)) {
             is Number -> value.toInt()
             is String -> value.trim().toIntOrNull()
+            else -> null
+        }
+    }
+
+    private fun JSONObject.takeDouble(key: String): Double? {
+        if (!has(key) || isNull(key)) return null
+        return when (val value = get(key)) {
+            is Number -> value.toDouble()
+            is String -> value.trim().toDoubleOrNull()
+            else -> null
+        }
+    }
+
+    private fun JSONObject.takeBoolean(key: String): Boolean? {
+        if (!has(key) || isNull(key)) return null
+        return when (val value = get(key)) {
+            is Boolean -> value
+            is String -> value.trim().toBooleanStrictOrNull()
             else -> null
         }
     }

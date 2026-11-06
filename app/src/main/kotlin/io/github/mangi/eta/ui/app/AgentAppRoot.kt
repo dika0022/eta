@@ -81,6 +81,7 @@ import io.github.mangi.eta.ui.screens.mcp.McpServersScreen
 import io.github.mangi.eta.ui.screens.memory.AgentMemoryScreen
 import io.github.mangi.eta.ui.screens.permissions.PermissionHealthScreen
 import io.github.mangi.eta.ui.screens.skills.AgentSkillsScreen
+import io.github.mangi.eta.ui.screens.skills.SkillMarketplaceScreen
 import io.github.mangi.eta.ui.screens.subagent.SubagentSettingsScreen
 import io.github.mangi.eta.ui.screens.terminal.LinuxEnvironmentScreen
 import io.github.mangi.eta.ui.screens.terminal.LinuxFilesScreen
@@ -156,6 +157,7 @@ fun AgentAppRoot(
     val toolsState = remember { buildToolsState(context) }
     val characterStore = viewModel<CharacterLibraryViewModel>().store
     val communityCatalogStore = viewModel<CommunityCatalogViewModel>().store
+    val skillMarketplaceStore = viewModel<SkillMarketplaceViewModel>().store
     val requestExecutionNotifications = rememberExecutionNotificationRequest()
     val requestLocalNetworkPermission = rememberLocalNetworkPermissionRequest(permissionHealth::refreshPermissionHealth)
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -481,6 +483,7 @@ fun AgentAppRoot(
                     onAction = { action ->
                         when (action) {
                             AgentSkillsAction.NavigateBack -> popRoute()
+                            AgentSkillsAction.OpenMarketplace -> pushRoute(AppRoute.SkillMarketplace)
                             is AgentSkillsAction.ImportZip -> skills.importSkillZip(action.uri)
                             AgentSkillsAction.ConfirmZipReplacement -> skills.confirmSkillZipReplacement()
                             AgentSkillsAction.CancelZipReplacement -> skills.cancelSkillZipReplacement()
@@ -490,6 +493,12 @@ fun AgentAppRoot(
                             is AgentSkillsAction.ReinstallBuiltin -> skills.reinstallBuiltin(action.skillId)
                         }
                     },
+                )
+            }
+            entry<AppRoute.SkillMarketplace>(swipeDismiss = swipeDismiss) {
+                SkillMarketplaceScreen(
+                    store = skillMarketplaceStore,
+                    onBack = ::popRoute,
                 )
             }
             entry<AppRoute.Characters>(swipeDismiss = swipeDismiss) {

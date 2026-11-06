@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderZip
+import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,25 @@ fun AgentSkillsScreen(
         val builtinInstalled = installed.filter { it.source == "builtin" }
         val userInstalled = installed.filter { it.canDeleteUserSkill }
         val removed = state.skills.filter { !it.installed }
+
+        item(key = "marketplace-card") {
+            EtaPreferenceGroup(
+                modifier = Modifier
+                    .padding(horizontal = CardHorizontalPadding)
+                    .padding(bottom = CardBottomPadding),
+            ) {
+                EtaPreference(
+                    title = "Skill komunitas",
+                    summary = "Jelajahi dan pasang skill dari repositori GitHub",
+                    startAction = {
+                        EtaPreferenceIcon(Icons.Rounded.Storefront, enabled = !operationPending, tint = EtaPreferenceColors.Blue)
+                    },
+                    enabled = !operationPending,
+                    onClick = { onAction(AgentSkillsAction.OpenMarketplace) },
+                    onClickLabel = "Buka skill komunitas",
+                )
+            }
+        }
 
         item(key = "zip-import-title") { EtaPreferenceGroupTitle(stringResource(R.string.ui_install_087db6)) }
         item(key = "zip-import-card") {

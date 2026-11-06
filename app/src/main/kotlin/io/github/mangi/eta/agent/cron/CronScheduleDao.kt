@@ -17,6 +17,13 @@ internal interface CronScheduleDao {
     @Query("SELECT * FROM agent_cron_schedules WHERE enabled = 1 AND paused = 0 ORDER BY next_run_at ASC")
     suspend fun activeSchedules(): List<CronScheduleEntity>
 
+    /** Used by event-driven triggers (e.g. notifications) to find candidates without a timer. */
+    @Query("SELECT * FROM agent_cron_schedules WHERE enabled = 1 AND paused = 0 AND schedule_type = :type")
+    suspend fun activeSchedulesByType(type: String): List<CronScheduleEntity>
+
+    @Query("SELECT * FROM agent_cron_runs WHERE status = 'PENDING_CONFIRMATION' ORDER BY scheduled_at DESC LIMIT :limit")
+    suspend fun pendingConfirmations(limit: Int): List<CronRunEntity>
+
     @Upsert
     suspend fun upsertSchedule(schedule: CronScheduleEntity)
 

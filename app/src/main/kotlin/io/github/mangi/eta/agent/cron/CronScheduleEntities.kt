@@ -33,6 +33,20 @@ internal data class CronScheduleEntity(
     @ColumnInfo(name = "lock_until") val lockUntil: Long? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "dry_run") val dryRun: Boolean = false,
+    // Only used when scheduleType == CronScheduleType.NOTIFICATION.
+    @ColumnInfo(name = "notify_package") val notifyPackage: String? = null,
+    @ColumnInfo(name = "notify_match") val notifyMatch: String? = null,
+    // Optional location gate attachable to CRON/INTERVAL/ONCE schedules: when set, the schedule's
+    // normal timer still fires, but CronLocationGate decides whether to actually run the prompt
+    // based on the device's last known (passively read) location. All four must be set together.
+    @ColumnInfo(name = "geo_lat") val geoLat: Double? = null,
+    @ColumnInfo(name = "geo_lng") val geoLng: Double? = null,
+    @ColumnInfo(name = "geo_radius_m") val geoRadiusM: Float? = null,
+    @ColumnInfo(name = "geo_transition") val geoTransition: String? = null,
+    // When true, an automatic trigger (not a manual "run now") parks as PENDING_CONFIRMATION
+    // instead of running immediately; see CronScheduleManager.confirmPendingRun.
+    @ColumnInfo(name = "require_confirmation") val requireConfirmation: Boolean = false,
 )
 
 @Entity(
@@ -58,4 +72,8 @@ internal data class CronRunEntity(
     val output: String = "",
     val error: String? = null,
     @ColumnInfo(name = "worker_run_id") val workerRunId: String? = null,
+    // Compact JSON array of {name, args_preview, result_summary, success} per tool call made
+    // during this run — see CronToolCallAudit. Capped in size; null when there were none yet
+    // (e.g. a PENDING_CONFIRMATION row) or the run predates this column.
+    @ColumnInfo(name = "tool_calls_json") val toolCallsJson: String? = null,
 )

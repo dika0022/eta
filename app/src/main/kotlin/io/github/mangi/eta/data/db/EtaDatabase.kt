@@ -7,8 +7,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import io.github.mangi.eta.agent.cron.CronRunEntity
-import io.github.mangi.eta.agent.cron.CronScheduleEntity
 import io.github.mangi.eta.agent.cron.CronScheduleDao
+import io.github.mangi.eta.agent.cron.CronScheduleEntity
 
 @Database(
     entities = [
@@ -31,7 +31,7 @@ import io.github.mangi.eta.agent.cron.CronScheduleDao
         CronScheduleEntity::class,
         CronRunEntity::class,
     ],
-    version = 24,
+    version = 26,
     exportSchema = false,
 )
 internal abstract class EtaDatabase : RoomDatabase() {
@@ -73,6 +73,8 @@ internal abstract class EtaDatabase : RoomDatabase() {
                         MIGRATION_21_22,
                         MIGRATION_22_23,
                         MIGRATION_23_24,
+                        MIGRATION_24_25,
+                        MIGRATION_25_26,
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) { createTextChunkCleanup(db) }
@@ -119,6 +121,21 @@ internal abstract class EtaDatabase : RoomDatabase() {
 
         internal val MIGRATION_21_22 = Migration(21, 22) { database ->
             database.execSQL("ALTER TABLE conversations ADD COLUMN model_id TEXT")
+        }
+
+        internal val MIGRATION_25_26 = Migration(25, 26) { database ->
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN require_confirmation INTEGER NOT NULL DEFAULT 0")
+            database.execSQL("ALTER TABLE agent_cron_runs ADD COLUMN tool_calls_json TEXT")
+        }
+
+        internal val MIGRATION_24_25 = Migration(24, 25) { database ->
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN dry_run INTEGER NOT NULL DEFAULT 0")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN notify_package TEXT")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN notify_match TEXT")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN geo_lat REAL")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN geo_lng REAL")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN geo_radius_m REAL")
+            database.execSQL("ALTER TABLE agent_cron_schedules ADD COLUMN geo_transition TEXT")
         }
 
         internal val MIGRATION_23_24 = Migration(23, 24) { database ->

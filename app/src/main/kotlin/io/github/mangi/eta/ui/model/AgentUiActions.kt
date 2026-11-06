@@ -50,6 +50,7 @@ sealed interface AgentToolsAction {
 
 sealed interface AgentSkillsAction {
     data object NavigateBack : AgentSkillsAction
+    data object OpenMarketplace : AgentSkillsAction
     data class ImportZip(val uri: String) : AgentSkillsAction
     data object ConfirmZipReplacement : AgentSkillsAction
     data object CancelZipReplacement : AgentSkillsAction

@@ -128,6 +128,9 @@ internal fun iconForTool(toolId: String): ImageVector = when (toolId) {
     "search_notes", "search_coloros_notes" -> Icons.AutoMirrored.Rounded.StickyNote2
     "search_system_memories", "search_coloros_memories" -> Icons.Rounded.Psychology
     "search_personal_orders" -> Icons.Rounded.ShoppingBag
+    "cron_create", "cron_list", "cron_update", "cron_delete", "cron_pause",
+    "cron_resume", "cron_run", "cron_history", "cron_pending", "cron_confirm" ->
+        Icons.Rounded.Schedule
     "terminal", "terminal_job", "terminal_daemon", "run_command" -> Icons.Rounded.Terminal
     "subagent", "subagent_profile" -> Icons.Rounded.Hub
     "read_file", "stat_file" -> Icons.Rounded.Description

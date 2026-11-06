@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import io.github.mangi.eta.agent.cron.CronNotificationTrigger
 import io.github.mangi.eta.data.repository.NotificationHistoryRepository
 
 class AgentNotificationHistoryService : NotificationListenerService() {
@@ -12,6 +13,15 @@ class AgentNotificationHistoryService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         record(sbn)
+        // Only a genuinely new notification should be able to fire a cron trigger — replaying
+        // already-existing notifications in onListenerConnected() below must not re-fire them.
+        val extras = sbn.notification.extras
+        CronNotificationTrigger.onPosted(
+            context = this,
+            packageName = sbn.packageName,
+            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
+            text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
+        )
     }
 
     override fun onListenerConnected() {
